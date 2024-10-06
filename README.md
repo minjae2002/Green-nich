@@ -9,149 +9,24 @@
 - **모델 관리**: Hugging Face Hub를 통해 모델과 토크나이저를 관리하고 공유하여 지속적인 업데이트와 협업이 가능합니다.
 
 ## 데모 설명 및 구현 방법
+- Colab 환경을 활용해 구현했습니다. Colab에 업로드 후, 위에서부터 하나씩 실행한 후 streamlit 데모를 구현할 수 있습니다. 이때,
+```bash
+import urllib
+print("Password/Endpoint IP:", urllib.request.urlopen('https://ipv4.icanhazip.com').read().decode('utf8').strip("\n"))     ```
+
+을 통해 받은 IP 주소를 복사한 후,
+
+```bash
+!npx localtunnel --port ```
+를 통해 연결된 링크에서 IP 주소를 복사하면 데모를 활용할 수 있습니다.
+  
 - Solar API를 활용해 1) Finetuning 및 2) RAG(Solar Embeddings) + Solar 성능을 비교하였고, 최종적으로
   2) RAG + Solar 챗봇을 선택하였습니다.
 - 현재 제공된 py 파일에 api_key를 입력한 후, 순서에 따라 실행하면 데모를 확인할 수 있습니다.
 
-## Finetuning 관련 설치
 
-### 설치 방법
-
-Fine-Tuning 모델을 설치하고 실행하기 위해 아래의 단계를 따르세요:
-
-1. **필요한 라이브러리 설치**:
-   - 먼저, 필요한 Python 라이브러리를 설치합니다. 터미널이나 명령 프롬프트에서 다음 명령어를 실행하세요:
-
-     ```bash
-     !pip install transformers datasets torch peft
-     ```
-
-   - 이 명령어는 `transformers`, `datasets`, `torch`, `peft` 등 모델 훈련과 데이터 처리를 위한 필수 라이브러리를 설치합니다.
-
-2. **사전 학습된 모델 및 데이터셋 로드**:
-   - Hugging Face의 `transformers` 라이브러리를 사용하여 사전 학습된 모델을 로드합니다. BERT 모델을 사용하려면 다음과 같이 코드를 작성하세요:
-
-     ```python
-     from transformers import AutoModelForQuestionAnswering, AutoTokenizer
-
-     model_name = "bert-large-uncased-whole-word-masking-finetuned-squad"
-     model = AutoModelForQuestionAnswering.from_pretrained(model_name)
-     tokenizer = AutoTokenizer.from_pretrained(model_name)
-     ```
-
-   - `datasets` 라이브러리를 사용하여 도메인에 맞는 데이터셋을 로드합니다.
-
-3. **데이터 전처리 및 토크나이저 설정**:
-   - 데이터를 모델에 맞게 전처리합니다.
-
-     ```python
-     def clean_text_columns(df, columns):
-         for col in columns:
-             df[col + '_cleaned'] = (
-                 df[col]
-                 .astype(str)
-                 .str.replace("\t|\n", " ")
-                 .str.replace(r" {2,}", " ", regex=True)
-                 .str.replace(r"[\*\-,|]", "", regex=True)
-                 .str.strip()
-             )
-         return df
-
-     # 데이터셋 전처리
-     df = clean_text_columns(df, ['example'])
-     ```
-
-   - 토크나이저를 사용하여 데이터를 토큰화합니다.
-
-4. **훈련 설정 및 실행**:
-   - `Trainer` 클래스를 사용하여 훈련 인자를 설정하고, 모델을 미세 조정합니다.
-
-     ```python
-     from transformers import Trainer, TrainingArguments
-
-     training_args = TrainingArguments(
-         output_dir="./results",
-         evaluation_strategy="epoch",
-         learning_rate=2e-5,
-         per_device_train_batch_size=8,
-         per_device_eval_batch_size=8,
-         num_train_epochs=3,
-         weight_decay=0.01,
-     )
-
-     trainer = Trainer(
-         model=model,
-         args=training_args,
-         train_dataset=tokenized_train_dataset,
-         eval_dataset=tokenized_eval_dataset,
-     )
-     
-     trainer.train()
-     ```
-
-5. **모델 평가 및 저장**:
-   - 훈련된 모델을 평가하고, 필요에 따라 저장하여 나중에 사용할 수 있도록 합니다.
-
-     ```python
-     trainer.save_model('./finetuned_model')
-     ```
-
-### 설치 방법
-
-1. **필요한 라이브러리 설치**:
-   - 먼저, 필요한 Python 라이브러리를 설치합니다. 터미널이나 명령 프롬프트에서 다음 명령어를 실행하세요:
-
-     ```bash
-     !pip install transformers datasets torch
-     ```
-
-   - 이 명령어는 `transformers`, `datasets`, `torch` 등 모델 실행과 데이터 처리를 위한 필수 라이브러리를 설치합니다.
-
-2. **사전 학습된 모델 및 토크나이저 로드**:
-   - Hugging Face의 `transformers` 라이브러리를 사용하여 사전 학습된 모델을 로드합니다.
-     ```python
-     from transformers import AutoModelForQuestionAnswering, AutoTokenizer
-
-     model = AutoModelForQuestionAnswering.from_pretrained("easyoon/finetuned_model")
-     tokenizer = AutoTokenizer.from_pretrained("easyoon/llminno_tokenizer")
-     ```
-
-3. **데이터 전처리 및 토큰화**:
-   - 데이터를 모델에 맞게 전처리하고 토큰화합니다.
-
-     ```python
-     def clean_text_columns(df, columns):
-         for col in columns:
-             df[col + '_cleaned'] = (
-                 df[col]
-                 .astype(str)
-                 .str.replace("\t|\n", " ")
-                 .str.replace(r" {2,}", " ", regex=True)
-                 .str.replace(r"[\*\-,|]", "", regex=True)
-                 .str.strip()
-             )
-         return df
-
-     # 데이터셋 전처리
-     df = clean_text_columns(df, ['example'])
-     ```
-
-   - 토크나이저를 사용하여 데이터를 토큰화합니다.
-
-4. **모델 예측 수행**:
-   - 준비된 데이터를 사용하여 모델 예측을 수행합니다.
-
-     ```python
-     inputs = tokenizer("질문 텍스트", "문맥 텍스트", return_tensors="pt")
-     outputs = model(**inputs)
-
-     start_logits = outputs.start_logits
-     end_logits = outputs.end_logits
-
-     # 결과 출력
-     print("Start logits:", start_logits)
-     print("End logits:", end_logits)
-     ```
+구체적인 내용은 다음과 같습니다.
+##
 ## RAG 관련
 ### 설치 방법
 
@@ -299,3 +174,143 @@ RAG 모델을 설치하고 실행하기 위해 아래의 단계를 따르세요:
 
 4. **결과 출력**:
    - 모델이 생성한 답변을 사용자에게 제공합니다.
+
+## Finetuning 관련 설치
+
+### 설치 방법
+
+Fine-Tuning 모델을 설치하고 실행하기 위해 아래의 단계를 따르세요:
+
+1. **필요한 라이브러리 설치**:
+   - 먼저, 필요한 Python 라이브러리를 설치합니다. 터미널이나 명령 프롬프트에서 다음 명령어를 실행하세요:
+
+     ```bash
+     !pip install transformers datasets torch peft
+     ```
+
+   - 이 명령어는 `transformers`, `datasets`, `torch`, `peft` 등 모델 훈련과 데이터 처리를 위한 필수 라이브러리를 설치합니다.
+
+2. **사전 학습된 모델 및 데이터셋 로드**:
+   - Hugging Face의 `transformers` 라이브러리를 사용하여 사전 학습된 모델을 로드합니다. BERT 모델을 사용하려면 다음과 같이 코드를 작성하세요:
+
+     ```python
+     from transformers import AutoModelForQuestionAnswering, AutoTokenizer
+
+     model_name = "bert-large-uncased-whole-word-masking-finetuned-squad"
+     model = AutoModelForQuestionAnswering.from_pretrained(model_name)
+     tokenizer = AutoTokenizer.from_pretrained(model_name)
+     ```
+
+   - `datasets` 라이브러리를 사용하여 도메인에 맞는 데이터셋을 로드합니다.
+
+3. **데이터 전처리 및 토크나이저 설정**:
+   - 데이터를 모델에 맞게 전처리합니다.
+
+     ```python
+     def clean_text_columns(df, columns):
+         for col in columns:
+             df[col + '_cleaned'] = (
+                 df[col]
+                 .astype(str)
+                 .str.replace("\t|\n", " ")
+                 .str.replace(r" {2,}", " ", regex=True)
+                 .str.replace(r"[\*\-,|]", "", regex=True)
+                 .str.strip()
+             )
+         return df
+
+     # 데이터셋 전처리
+     df = clean_text_columns(df, ['example'])
+     ```
+
+   - 토크나이저를 사용하여 데이터를 토큰화합니다.
+
+4. **훈련 설정 및 실행**:
+   - `Trainer` 클래스를 사용하여 훈련 인자를 설정하고, 모델을 미세 조정합니다.
+
+     ```python
+     from transformers import Trainer, TrainingArguments
+
+     training_args = TrainingArguments(
+         output_dir="./results",
+         evaluation_strategy="epoch",
+         learning_rate=2e-5,
+         per_device_train_batch_size=8,
+         per_device_eval_batch_size=8,
+         num_train_epochs=3,
+         weight_decay=0.01,
+     )
+
+     trainer = Trainer(
+         model=model,
+         args=training_args,
+         train_dataset=tokenized_train_dataset,
+         eval_dataset=tokenized_eval_dataset,
+     )
+     
+     trainer.train()
+     ```
+
+5. **모델 평가 및 저장**:
+   - 훈련된 모델을 평가하고, 필요에 따라 저장하여 나중에 사용할 수 있도록 합니다.
+
+     ```python
+     trainer.save_model('./finetuned_model')
+     ```
+
+### 설치 방법
+
+1. **필요한 라이브러리 설치**:
+   - 먼저, 필요한 Python 라이브러리를 설치합니다. 터미널이나 명령 프롬프트에서 다음 명령어를 실행하세요:
+
+     ```bash
+     !pip install transformers datasets torch
+     ```
+
+   - 이 명령어는 `transformers`, `datasets`, `torch` 등 모델 실행과 데이터 처리를 위한 필수 라이브러리를 설치합니다.
+
+2. **사전 학습된 모델 및 토크나이저 로드**:
+   - Hugging Face의 `transformers` 라이브러리를 사용하여 사전 학습된 모델을 로드합니다.
+     ```python
+     from transformers import AutoModelForQuestionAnswering, AutoTokenizer
+
+     model = AutoModelForQuestionAnswering.from_pretrained("easyoon/finetuned_model")
+     tokenizer = AutoTokenizer.from_pretrained("easyoon/llminno_tokenizer")
+     ```
+
+3. **데이터 전처리 및 토큰화**:
+   - 데이터를 모델에 맞게 전처리하고 토큰화합니다.
+
+     ```python
+     def clean_text_columns(df, columns):
+         for col in columns:
+             df[col + '_cleaned'] = (
+                 df[col]
+                 .astype(str)
+                 .str.replace("\t|\n", " ")
+                 .str.replace(r" {2,}", " ", regex=True)
+                 .str.replace(r"[\*\-,|]", "", regex=True)
+                 .str.strip()
+             )
+         return df
+
+     # 데이터셋 전처리
+     df = clean_text_columns(df, ['example'])
+     ```
+
+   - 토크나이저를 사용하여 데이터를 토큰화합니다.
+
+4. **모델 예측 수행**:
+   - 준비된 데이터를 사용하여 모델 예측을 수행합니다.
+
+     ```python
+     inputs = tokenizer("질문 텍스트", "문맥 텍스트", return_tensors="pt")
+     outputs = model(**inputs)
+
+     start_logits = outputs.start_logits
+     end_logits = outputs.end_logits
+
+     # 결과 출력
+     print("Start logits:", start_logits)
+     print("End logits:", end_logits)
+     ```
