@@ -12,12 +12,14 @@
 - Colab 환경을 활용해 구현했습니다. Colab에 업로드 후, 위에서부터 하나씩 실행한 후 streamlit 데모를 구현할 수 있습니다. 이때,
 ```bash
 import urllib
-print("Password/Endpoint IP:", urllib.request.urlopen('https://ipv4.icanhazip.com').read().decode('utf8').strip("\n"))     ```
+print("Password/Endpoint IP:", urllib.request.urlopen('https://ipv4.icanhazip.com').read().decode('utf8').strip("\n"))
+```
 
 을 통해 받은 IP 주소를 복사한 후,
 
 ```bash
-!npx localtunnel --port ```
+!npx localtunnel --port
+```
 를 통해 연결된 링크에서 IP 주소를 복사하면 데모를 활용할 수 있습니다.
   
 - Solar API를 활용해 1) Finetuning 및 2) RAG(Solar Embeddings) + Solar 성능을 비교하였고, 최종적으로
