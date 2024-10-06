@@ -9,6 +9,7 @@
 - **모델 관리**: Hugging Face Hub를 통해 모델과 토크나이저를 관리하고 공유하여 지속적인 업데이트와 협업이 가능합니다.
 
 ## 데모 설명 및 구현 방법
+- Upstage_RAG를 최종 구현 데모로 선택했습니다.
 - Colab 환경을 활용해 구현했습니다. Colab에 업로드 후, 위에서부터 하나씩 실행한 후 streamlit 데모를 구현할 수 있습니다. 이때,
 ```bash
 import urllib
@@ -27,8 +28,8 @@ print("Password/Endpoint IP:", urllib.request.urlopen('https://ipv4.icanhazip.co
 - 현재 제공된 py 파일에 api_key를 입력한 후, 순서에 따라 실행하면 데모를 확인할 수 있습니다.
 
 
-구체적인 내용은 다음과 같습니다.
 ##
+구체적인 내용은 다음과 같습니다.
 ## RAG 관련
 ### 설치 방법
 
